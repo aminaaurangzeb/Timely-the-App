@@ -42,7 +42,7 @@ public class PersistableCollection<T extends Persistable> extends AbstractCollec
         Cursor cursor = db.rawQuery(query,null);
 
         while(cursor.moveToNext()){
-            T object = getObject("com.example.smd.Note");
+            T object = getObject("com.example.timely");
             object.load(cursor);
             collection.add(object);
         }

@@ -4,6 +4,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.ServiceConnection;
+import android.os.Build;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -13,6 +17,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
+import android.util.Xml;
 import android.view.View;
 
 import com.example.timely.ClockAdapter;
@@ -20,8 +26,13 @@ import com.example.timely.CountryAdapter;
 import com.example.timely.Country;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.Serializable;
+import java.io.StringReader;
 import java.lang.reflect.Array;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -33,18 +44,50 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 
+import org.xmlpull.v1.XmlPullParser;
+
 import java.sql.Time;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.TimeZone;
+import java.util.stream.Collectors;
+
+import static java.util.logging.Level.parse;
 
 public class MainActivity extends AppCompatActivity {
     //List<Country> countries;
 
     private ClockAdapter clockAdapter;
 
+/*//////////////
+    timezoneservice dataService;
+    boolean bound = false;
+    private ServiceConnection connection = new ServiceConnection(){
+        public void onServiceConnected(ComponentName className, IBinder binder){
+            dataService = ((timezoneservice.LocalBinder) binder).getService();
+            bound = true;
+            //downloading info
+            dataService.getContent();
+            //showMessage(dataService.getStatus());
+        }
+        public void onServiceDisconnected(ComponentName className){
+            bound = false;
+        }
+    };
+    protected void onStart(){
+        super.onStart();
+        Intent intent = new Intent(this,timezoneservice.class);
+        bindService(intent,connection, Context.BIND_AUTO_CREATE);
+    }
+    protected void onStop(){
+        super.onStop();
+        if(bound){
+            unbindService(connection);
+        }
+    }
+   *////////////////////
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -57,16 +100,20 @@ public class MainActivity extends AppCompatActivity {
         DBHelper db = new DBHelper(this);
 
         //Adding Data to Database if empty
-        if(db.getCountriesCount() == 0){
-            db.addCountry(new Country("Islamabad", "Asia/Karachi",false));
-            db.addCountry(new Country("New York", "America/New_York",false));
-            db.addCountry(new Country("Hawaii","Pacific/Tahiti",false));
-            db.addCountry(new Country("Karachi", "Asia/Karachi",false));
-            db.addCountry(new Country("Lahore", "Asia/Karachi",false));
-            db.addCountry(new Country("Bangkok", "Asia/Bangkok",false));
-            db.addCountry(new Country("Jakarta", "Asia/Jakarta",false));
-            db.addCountry(new Country("Kuwait", "Asia/Kuwait",false));
-        }
+        Intent intent = new Intent(this,timezoneservice.class);
+        startService(intent);
+//        if(db.getCountriesCount() == 0){
+//            //timezone service being called
+//
+//       db.addCountry(new Country("Islamabad", "Asia/Karachi",false));
+//            db.addCountry(new Country("New York", "America/New_York",false));
+//            db.addCountry(new Country("Hawaii","Pacific/Tahiti",false));
+//            db.addCountry(new Country("Karachi", "Asia/Karachi",false));
+//            db.addCountry(new Country("Lahore", "Asia/Karachi",false));
+//            db.addCountry(new Country("Bangkok", "Asia/Bangkok",false));
+//            db.addCountry(new Country("Jakarta", "Asia/Jakarta",false));
+//            db.addCountry(new Country("Kuwait", "Asia/Kuwait",false));
+//       }
 
         // Reading all contacts
         Log.d("Reading: ", "Reading all countries..");
@@ -98,6 +145,7 @@ public class MainActivity extends AppCompatActivity {
                 //finish();
             }
         });
+
         final Handler handler = new Handler();
         handler.postDelayed( new Runnable() {
 
@@ -109,7 +157,7 @@ public class MainActivity extends AppCompatActivity {
         }, 1000 );
     }
 
-    /*public void onPause(){
+        /*public void onPause(){
         super.onPause();
         PersistableCollection<Country> collection = new PersistableCollection(countries);
         collection.save(getApplicationContext());
@@ -121,6 +169,7 @@ public class MainActivity extends AppCompatActivity {
         PersistableCollection<Country> collection = new PersistableCollection(countries);
         collection.load(getApplicationContext());
     }*/
+
     public String printTime(TimeZone tz){
 
         Calendar c = Calendar.getInstance(tz);
